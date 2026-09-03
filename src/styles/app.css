@@ -118,9 +118,34 @@ html, body, #root {
 .form-error { color: #ef4444; }
 .list-h { font-size: 13px; margin: 8px 0 0; }
 .svc-list { list-style: none; margin: 0; padding: 0; }
-.svc-row { display: grid; grid-template-columns: auto 1fr 72px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); color: var(--text); font-size: 14px; font-weight: 600; }
-.svc-row .price { min-height: 32px; text-align: right; }
+.svc-item { border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 4px; }
+.svc-row { display: grid; grid-template-columns: auto 1fr 72px; gap: 8px; align-items: center; padding: 6px 0; color: var(--text); font-size: 14px; font-weight: 600; }
+.svc-row.qty { grid-template-columns: auto 1fr 44px 72px; }
+.svc-row .price, .svc-row .qty { min-height: 32px; text-align: right; }
 .svc-row.sub { grid-template-columns: 1fr 72px; }
+.svc-name { min-width: 0; }
+.svc-name em { font-style: normal; color: var(--muted); font-weight: 500; font-size: 12px; }
+.preset-select, .note-input {
+  width: 100%;
+  margin: 4px 0 2px;
+  min-height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #12141c;
+  color: var(--text);
+  padding: 0 10px;
+}
+.naprawa-opts { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 2px; }
+.naprawa-opt {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 4px 0;
+}
 .total-line { font-weight: 800; font-size: 18px; }
 .card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .card-actions button {

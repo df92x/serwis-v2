@@ -64,6 +64,7 @@
 - [x] Zdjęcia na formularzu (kompresja)
 - [x] Kosz TTL 24h + purge / wyczyść / usuń na stałe
 - [x] Tryb CR (złożenie + e-Bike)
+- [x] Presety cennika + opcje Naprawa + qty
 
 ---
 

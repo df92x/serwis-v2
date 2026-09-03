@@ -1,5 +1,11 @@
 export type OrderStatus = 'przyjete' | 'gotowe' | 'wydane' | 'kosz'
 
+export type SelectedServiceOption = {
+  id: string
+  label: string
+  price: number
+}
+
 export type OrderItem = {
   name: string
   price: number
@@ -9,7 +15,7 @@ export type OrderItem = {
   noteText?: string
   selectedPreset?: number
   customLabel?: string
-  selectedOptions?: unknown[]
+  selectedOptions?: SelectedServiceOption[]
 }
 
 export type OrderSub = {

@@ -34,6 +34,13 @@ function asBool(v: unknown) {
 
 function parseItem(raw: unknown): OrderItem | null {
   if (!isRecord(raw) || typeof raw.name !== 'string') return null
+  const selectedOptions = Array.isArray(raw.selectedOptions)
+    ? raw.selectedOptions.filter(isRecord).map(o => ({
+      id: String(o.id || ''),
+      label: String(o.label || ''),
+      price: Number(o.price) || 0,
+    })).filter(o => o.id || o.label)
+    : undefined
   return {
     name: canonicalName(raw.name),
     price: Number(raw.price) || 0,
@@ -43,6 +50,7 @@ function parseItem(raw: unknown): OrderItem | null {
     noteText: asString(raw.noteText),
     selectedPreset: typeof raw.selectedPreset === 'number' ? raw.selectedPreset : undefined,
     customLabel: asString(raw.customLabel),
+    selectedOptions,
   }
 }
 
