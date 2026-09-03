@@ -140,6 +140,7 @@ export function parseOrder(raw: unknown): Order | null {
     archivedAt: asString(raw.archivedAt),
     smsSent: asBool(raw.smsSent),
     deletedAt: raw.deletedAt == null ? undefined : (typeof raw.deletedAt === 'number' ? raw.deletedAt : asString(raw.deletedAt)),
+    deletedFrom: asString(raw.deletedFrom),
     unarchivedAt: asString(raw.unarchivedAt),
   }
 }

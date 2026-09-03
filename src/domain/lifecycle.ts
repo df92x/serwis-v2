@@ -19,8 +19,14 @@ export function applyClientAndState(order: Order, client: {
     tel: client.tel,
     termin: client.termin,
     ebike: !!client.ebike,
+    cr: !!state.cr,
     total: formatTotal(calcStateTotal(state)),
-    state: JSON.stringify({ ...state, ...client, ebike: client.ebike ? '1' : '0' }),
+    state: JSON.stringify({
+      ...state,
+      ...client,
+      ebike: client.ebike ? '1' : '0',
+      cr: !!state.cr,
+    }),
   }
 }
 

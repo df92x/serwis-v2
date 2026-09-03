@@ -48,6 +48,7 @@ export type Order = {
   totalPrzedRaportem?: string
   kwotaSprzedazy?: string
   deletedAt?: string | number
+  deletedFrom?: 'historia' | 'archiwum' | string
   unarchivedAt?: string
 }
 

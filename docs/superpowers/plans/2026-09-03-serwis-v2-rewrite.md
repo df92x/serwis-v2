@@ -62,6 +62,8 @@
 - [x] Cofnij wydanie → Gotowe (`unarchivedAt`)
 - [x] Euro EBC w kalkulatorze
 - [x] Zdjęcia na formularzu (kompresja)
+- [x] Kosz TTL 24h + purge / wyczyść / usuń na stałe
+- [x] Tryb CR (złożenie + e-Bike)
 
 ---
 

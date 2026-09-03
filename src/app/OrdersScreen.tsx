@@ -1,6 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { readArchive, readHistory, readTrash } from '../data/storage'
-import { moveHistoryToArchive, moveToTrash, restoreFromTrash, unarchiveToHistory } from '../data/repo'
+import {
+  deleteFromTrashPermanent,
+  emptyTrashPermanent,
+  moveHistoryToArchive,
+  moveToTrash,
+  purgeExpiredKosz,
+  restoreFromTrash,
+  unarchiveToHistory,
+} from '../data/repo'
 import { createRabForEntry, hasRabForEntry, templateById } from '../data/rabatyStore'
 import { releaseOrder, unarchiveOrder } from '../domain/lifecycle'
 import { orderStatus, type Order } from '../domain/order'
@@ -13,7 +21,10 @@ type Tab = 'przyjete' | 'gotowe' | 'wydane' | 'kosz'
 
 function loadTab(tab: Tab): Order[] {
   if (tab === 'wydane') return readArchive()
-  if (tab === 'kosz') return readTrash()
+  if (tab === 'kosz') {
+    purgeExpiredKosz()
+    return readTrash()
+  }
   const hist = readHistory()
   if (tab === 'gotowe') return hist.filter(o => orderStatus(o) === 'gotowe')
   return hist.filter(o => orderStatus(o) === 'przyjete')
@@ -35,6 +46,10 @@ export function OrdersScreen({
   const [tick, setTick] = useState(0)
   const [flash, setFlash] = useState('')
   const refresh = () => setTick(n => n + 1)
+
+  useEffect(() => {
+    if (tab === 'kosz') purgeExpiredKosz()
+  }, [tab])
 
   const orders = useMemo(() => {
     const list = loadTab(tab)
@@ -105,6 +120,20 @@ export function OrdersScreen({
           Brak zleceń. Dane ze starej appki w tej samej przeglądarce pojawią się automatycznie.
         </p>
       )}
+      {tab === 'kosz' && !!orders.length && (
+        <button
+          type="button"
+          className="cta danger-cta"
+          onClick={() => {
+            if (!window.confirm('Wyczyścić cały kosz? Trwałe usunięcie.')) return
+            const n = emptyTrashPermanent()
+            setFlash(`Usunięto ${n} zleceń.`)
+            refresh()
+          }}
+        >
+          Wyczyść kosz
+        </button>
+      )}
       <ul className="order-list">
         {orders.map(o => {
           const acceptSms = smsHref(o.tel, smsPrzyjecieBody(o))
@@ -117,6 +146,7 @@ export function OrdersScreen({
                 {o.total && <span>{o.total} zł</span>}
               </div>
               {o.kodOdbioru && <div className="order-date">Kod: {o.kodOdbioru}</div>}
+              {o.cr && <div className="order-date">CR / Złożenie{o.ebike ? ' · e-Bike' : ''}</div>}
               {o.label && <div className="order-date">{o.label}</div>}
               {!!o.photos?.length && <div className="order-date">Zdjęcia: {o.photos.length}</div>}
               <div className="card-actions">
@@ -156,7 +186,20 @@ export function OrdersScreen({
                   </>
                 )}
                 {tab === 'kosz' && (
-                  <button type="button" onClick={() => { restoreFromTrash(o); refresh() }}>PRZYWRÓĆ</button>
+                  <>
+                    <button type="button" onClick={() => { restoreFromTrash(o); refresh() }}>PRZYWRÓĆ</button>
+                    <button
+                      type="button"
+                      className="danger"
+                      onClick={() => {
+                        if (!window.confirm('Usunąć na stałe?')) return
+                        deleteFromTrashPermanent(o)
+                        refresh()
+                      }}
+                    >
+                      USUŃ
+                    </button>
+                  </>
                 )}
               </div>
             </li>

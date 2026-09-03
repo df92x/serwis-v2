@@ -3,6 +3,13 @@ import { clearDraft, markInterrupted, readDraft, writeDraft } from '../data/draf
 import { saveToHistory } from '../data/repo'
 import { DEFAULTS } from '../domain/catalog'
 import { buildAcceptedOrder, calcStateTotal, formatTotal } from '../domain/accept'
+import {
+  applyCrToItems,
+  calcCrTotal,
+  crAssemblyOptions,
+  CR_EXTRAS,
+  type CrState,
+} from '../domain/cr'
 import { snapshotDraft } from '../domain/draft'
 import { applyClientAndState, finishRepair } from '../domain/lifecycle'
 import { digitsTel } from '../domain/format'
@@ -36,6 +43,9 @@ function stateFromOrder(order: Order, repair: boolean): OrderState {
       tel: order.tel,
       termin: order.termin,
       photos: order.photos,
+      cr: order.cr,
+      crState: order.cr ? (parseState(order.state)?.crState) : undefined,
+      ebike: order.ebike ? '1' : '0',
     })
   }
   const parsed = parseState(order.state)
@@ -48,6 +58,8 @@ function stateFromOrder(order: Order, repair: boolean): OrderState {
     tel: order.tel || base.tel,
     termin: order.termin || base.termin,
     photos: order.photos || base.photos,
+    cr: order.cr ?? base.cr,
+    ebike: order.ebike ? '1' : base.ebike,
     subs: base.subs.length ? base.subs : emptySubs(),
   })
 }
@@ -86,16 +98,34 @@ export function OrderForm({
   const [photos, setPhotos] = useState<Photo[]>(
     (order?.photos || initial.photos || []).filter(p => p.dataUrl),
   )
+  const [crMode, setCrMode] = useState(!!(order?.cr || initial.cr))
+  const [ebike, setEbike] = useState(!!(order?.ebike || initial.ebike === '1' || initial.ebike === true))
+  const [cr, setCr] = useState<CrState>(() => ({
+    assemblyId: initial.crState?.assemblyId || '',
+    extras: Array.isArray(initial.crState?.extras)
+      ? initial.crState!.extras.map(String)
+      : [],
+  }))
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const total = formatTotal(calcStateTotal({ items, subs }))
   const clientLocked = mode === 'repair'
+  const canCr = mode === 'new' || mode === 'edit'
+
+  useEffect(() => {
+    if (!crMode || !canCr) return
+    setItems(prev => applyCrToItems(prev, cr, ebike) as OrderItem[])
+  }, [cr, ebike, crMode, canCr])
+
+  const total = formatTotal(crMode && canCr ? calcCrTotal(cr, ebike) : calcStateTotal({ items, subs }))
 
   useEffect(() => {
     const persistInterrupt = () => {
       writeDraft({
         ...snapshotDraft({ marka, model, kolor, tel, termin, items, subs }),
         photos,
+        cr: crMode,
+        ebike: ebike ? '1' : '0',
+        crState: cr,
       })
       markInterrupted()
     }
@@ -108,7 +138,7 @@ export function OrderForm({
       document.removeEventListener('visibilitychange', onVis)
       window.removeEventListener('pagehide', persistInterrupt)
     }
-  }, [marka, model, kolor, tel, termin, items, subs, photos])
+  }, [marka, model, kolor, tel, termin, items, subs, photos, crMode, ebike, cr])
 
   async function onFiles(files: FileList | null) {
     if (!files?.length) return
@@ -126,18 +156,45 @@ export function OrderForm({
       setError('Podaj markę/model i 9-cyfrowy telefon.')
       return
     }
+    if (crMode && canCr && !cr.assemblyId) {
+      setError('Wybierz typ złożenia roweru.')
+      return
+    }
     const client = {
       marka,
       model: model.trim().toUpperCase(),
       kolor: kolor.trim().toUpperCase(),
       tel: digitsTel(tel),
       termin,
+      ebike,
     }
-    const state: OrderState = { items, subs, photos, ...client }
+    const nextItems = crMode && canCr ? applyCrToItems(items, cr, ebike) as OrderItem[] : items
+    const state: OrderState = {
+      items: nextItems,
+      subs: crMode ? emptySubs() : subs,
+      photos,
+      cr: crMode,
+      crState: crMode ? cr : undefined,
+      marka: client.marka,
+      model: client.model,
+      kolor: client.kolor,
+      tel: client.tel,
+      termin: client.termin,
+      ebike: ebike ? '1' : '0',
+    }
     if (mode === 'new') {
-      saveToHistory(buildAcceptedOrder({ ...client, state, photos }))
+      saveToHistory({
+        ...buildAcceptedOrder({ ...client, state, photos }),
+        cr: crMode,
+        ebike,
+      })
     } else if (order && mode === 'edit') {
-      saveToHistory({ ...applyClientAndState(order, client, state), photos })
+      saveToHistory({
+        ...applyClientAndState(order, client, state),
+        photos,
+        cr: crMode,
+        ebike,
+      })
     } else if (order && mode === 'repair') {
       saveToHistory({ ...finishRepair(order, state, notatka), photos })
     }
@@ -151,6 +208,16 @@ export function OrderForm({
       {error && <p className="form-error">{error}</p>}
       {!clientLocked && (
         <>
+          <div className="chip-row">
+            {canCr && (
+              <button type="button" className={crMode ? 'chip on' : 'chip'} onClick={() => setCrMode(v => !v)}>
+                CR / Złożenie
+              </button>
+            )}
+            <button type="button" className={ebike ? 'chip on' : 'chip'} onClick={() => setEbike(v => !v)}>
+              e-Bike
+            </button>
+          </div>
           <label>
             Marka
             <select value={marka} onChange={e => setMarka(e.target.value)}>
@@ -203,7 +270,43 @@ export function OrderForm({
         </div>
       </div>
 
-      <ServiceList items={items} subs={subs} onItems={setItems} onSubs={setSubs} />
+      {crMode && canCr ? (
+        <div className="cr-panel">
+          <p className="list-h">Złożenie ({ebike ? 'e-Bike' : 'klasyczny'})</p>
+          {crAssemblyOptions(ebike).map(opt => (
+            <label key={opt.id} className="cr-row">
+              <input
+                type="radio"
+                name="cr-assembly"
+                checked={cr.assemblyId === opt.id}
+                onChange={() => setCr(c => ({ ...c, assemblyId: opt.id }))}
+              />
+              <span>{opt.label}</span>
+              <strong>{opt.price} zł</strong>
+            </label>
+          ))}
+          <p className="list-h">Dodatki</p>
+          {CR_EXTRAS.map(ex => (
+            <label key={ex.id} className="cr-row">
+              <input
+                type="checkbox"
+                checked={cr.extras.includes(ex.id)}
+                onChange={() => setCr(c => ({
+                  ...c,
+                  extras: c.extras.includes(ex.id)
+                    ? c.extras.filter(x => x !== ex.id)
+                    : [...c.extras, ex.id],
+                }))}
+              />
+              <span>{ex.label}</span>
+              <strong>{ex.priceLabel || `${ex.price} zł`}</strong>
+            </label>
+          ))}
+        </div>
+      ) : (
+        <ServiceList items={items} subs={subs} onItems={setItems} onSubs={setSubs} />
+      )}
+
       {mode === 'repair' && (
         <label>
           Notatka naprawy
