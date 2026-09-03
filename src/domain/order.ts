@@ -47,9 +47,12 @@ export type Order = {
   smsSent?: boolean
   totalPrzedRaportem?: string
   kwotaSprzedazy?: string
+  deletedAt?: string | number
+  unarchivedAt?: string
 }
 
 export function orderStatus(order: Order): OrderStatus {
+  if (order.deletedAt) return 'kosz'
   if (order.archivedAt || order.dataWydania) return 'wydane'
   if (order.raportKoncowy) return 'gotowe'
   return 'przyjete'

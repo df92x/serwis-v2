@@ -184,3 +184,5 @@ html, body, #root {
   padding: 0 10px;
 }
 .update-banner .ok { border-color: #1e40af; color: var(--browse); }
+.drive-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.drive-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }

@@ -139,6 +139,8 @@ export function parseOrder(raw: unknown): Order | null {
     dataWydania: asString(raw.dataWydania),
     archivedAt: asString(raw.archivedAt),
     smsSent: asBool(raw.smsSent),
+    deletedAt: raw.deletedAt == null ? undefined : (typeof raw.deletedAt === 'number' ? raw.deletedAt : asString(raw.deletedAt)),
+    unarchivedAt: asString(raw.unarchivedAt),
   }
 }
 

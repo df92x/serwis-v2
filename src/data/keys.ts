@@ -9,4 +9,9 @@ export const STORAGE = {
   raportDraft: 'wycena-raport-draft-v1',
   rabatyActive: 'rabat-aktywne-v1',
   rabatyUsed: 'rabat-wykorzystane-v1',
+  gdriveEmail: 'gdrive-email',
+  gdriveAvatar: 'gdrive-avatar',
+  gdriveFolderId: 'gdrive-folder-id',
+  gdriveLastSync: 'gdrive-last-sync',
+  lastBackupGdrive: 'last-backup-gdrive',
 } as const

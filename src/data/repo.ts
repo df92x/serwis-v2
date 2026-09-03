@@ -14,11 +14,16 @@ export function moveHistoryToArchive(order: Order) {
 export function moveToTrash(order: Order, from: 'history' | 'archive') {
   if (from === 'history') writeHistory(removeById(readHistory(), order.id))
   else writeArchive(removeById(readArchive(), order.id))
-  writeTrash(upsertById(readTrash(), order))
+  writeTrash(upsertById(readTrash(), {
+    ...order,
+    deletedAt: order.deletedAt || Date.now(),
+  }))
 }
 
 export function restoreFromTrash(order: Order) {
+  const cleaned = { ...order }
+  delete cleaned.deletedAt
   writeTrash(removeById(readTrash(), order.id))
-  if (order.archivedAt || order.dataWydania) writeArchive(upsertById(readArchive(), order))
-  else writeHistory(upsertById(readHistory(), order))
+  if (cleaned.archivedAt || cleaned.dataWydania) writeArchive(upsertById(readArchive(), cleaned))
+  else writeHistory(upsertById(readHistory(), cleaned))
 }

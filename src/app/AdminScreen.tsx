@@ -3,6 +3,12 @@ import { readArchive, readHistory, readTrash, writeArchive, writeHistory, writeT
 import { readRabatyActive, readRabatyUsed, writeRabatyActive, writeRabatyUsed } from '../data/rabatyStore'
 import { parseOrderList } from '../domain/parse'
 import type { RabCode } from '../domain/rabaty'
+import {
+  loginGoogleDrive,
+  logoutGoogleDrive,
+  manualDriveSync,
+  readDriveSession,
+} from '../integrations/sync'
 import { useRef, useState } from 'react'
 
 type Backup = {
@@ -26,9 +32,27 @@ function download(filename: string, text: string) {
   URL.revokeObjectURL(url)
 }
 
+function fmtSync(iso: string) {
+  if (!iso) return 'Brak synchronizacji'
+  try {
+    const d = new Date(iso)
+    return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })
+      + ' '
+      + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return iso
+  }
+}
+
 export function AdminScreen() {
   const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [session, setSession] = useState(() => readDriveSession())
   const fileRef = useRef<HTMLInputElement>(null)
+
+  function refreshSession() {
+    setSession(readDriveSession())
+  }
 
   function exportBackup() {
     const payload: Backup = {
@@ -66,9 +90,75 @@ export function AdminScreen() {
     reader.readAsText(file)
   }
 
+  async function onLogin() {
+    setBusy(true)
+    setMsg('')
+    try {
+      await loginGoogleDrive()
+      refreshSession()
+      setMsg('Zalogowano. Kliknij Synchronizuj.')
+    } catch {
+      setMsg('Logowanie Google nieudane.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function onLogout() {
+    logoutGoogleDrive()
+    refreshSession()
+    setMsg('Wylogowano.')
+  }
+
+  async function onSync() {
+    setBusy(true)
+    setMsg('Synchronizacja…')
+    try {
+      const r = await manualDriveSync()
+      refreshSession()
+      setMsg(r.changed > 0
+        ? `Sync OK · zmieniono ${r.changed} zleceń`
+        : 'Sync OK · bez zmian lokalnych')
+    } catch (e) {
+      const err = e instanceof Error ? e.message : String(e)
+      setMsg(err === 'gsi_unavailable'
+        ? 'Brak Google Sign-In — sprawdź sieć / odśwież.'
+        : 'Sync błąd: ' + err)
+      refreshSession()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="new-order">
-      <p className="hint">Kopia lokalna (te same klucze co stara appka). Google Drive — później.</p>
+      <div className="order-card">
+        {session.hasSession ? (
+          <>
+            <div className="drive-row">
+              {session.avatar ? (
+                <img className="drive-avatar" src={session.avatar} alt="" />
+              ) : null}
+              <div>
+                <div className="order-title" style={{ color: '#22c55e' }}>{session.emailMasked}</div>
+                <div className="order-date">{fmtSync(session.lastSync)}</div>
+              </div>
+            </div>
+            <div className="card-actions">
+              <button type="button" className="ok" disabled={busy} onClick={() => void onSync()}>
+                Synchronizuj
+              </button>
+              <button type="button" disabled={busy} onClick={onLogout}>Wyloguj</button>
+            </div>
+          </>
+        ) : (
+          <button type="button" className="cta cta-browse" disabled={busy} onClick={() => void onLogin()}>
+            Zaloguj Google Drive
+          </button>
+        )}
+      </div>
+
+      <p className="hint">Kopia lokalna JSON (te same klucze co stara appka).</p>
       <button type="button" className="cta cta-browse" onClick={exportBackup}>Eksport JSON</button>
       <button type="button" className="cta cta-add" onClick={() => fileRef.current?.click()}>Import JSON</button>
       <input

@@ -56,7 +56,8 @@
 - [x] SMS przyjęcie / gotowe / rabat
 - [x] Raport KOPIUJ / PNG (tekstowy canvas)
 - [x] PWA + Update App
-- [ ] Google Drive merge (logika `_pickMergeWinner`)
+- [x] Google Drive merge (logika `_pickMergeWinner`)
+- [x] Admin: login GIS + Synchronizuj (serwis-current.json)
 - [ ] PDF (opcjonalnie później)
 
 ---
