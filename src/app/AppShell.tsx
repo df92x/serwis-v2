@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CalcScreen } from './CalcScreen'
 import { OrderForm } from './OrderForm'
 import { OrdersScreen } from './OrdersScreen'
+import { consumeInterrupted, readDraft } from '../data/draftStore'
 import type { Screen } from './screens'
 import type { Order } from '../domain/order'
 
@@ -13,7 +14,7 @@ const PLACEHOLDERS: Partial<Record<Screen, string>> = {
 
 type View =
   | { screen: Screen }
-  | { screen: 'nowe' }
+  | { screen: 'nowe'; resume?: boolean }
   | { screen: 'przegladaj' }
   | { screen: 'edit'; order: Order }
   | { screen: 'repair'; order: Order }
@@ -31,7 +32,11 @@ function title(view: View) {
 }
 
 export function AppShell() {
-  const [view, setView] = useState<View>({ screen: 'menu' })
+  const [view, setView] = useState<View>(() => (
+    consumeInterrupted() && readDraft()
+      ? { screen: 'nowe', resume: true }
+      : { screen: 'menu' }
+  ))
   const backToBrowse = view.screen === 'edit' || view.screen === 'repair'
 
   if (view.screen !== 'menu') {
@@ -54,7 +59,11 @@ export function AppShell() {
           />
         )}
         {view.screen === 'nowe' && (
-          <OrderForm mode="new" onDone={() => setView({ screen: 'przegladaj' })} />
+          <OrderForm
+            mode="new"
+            resumeDraft={'resume' in view ? !!view.resume : false}
+            onDone={() => setView({ screen: 'przegladaj' })}
+          />
         )}
         {view.screen === 'edit' && (
           <OrderForm mode="edit" order={view.order} onDone={() => setView({ screen: 'przegladaj' })} />

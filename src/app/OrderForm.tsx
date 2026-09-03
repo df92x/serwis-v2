@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { clearDraft, markInterrupted, readDraft, writeDraft } from '../data/draftStore'
 import { saveToHistory } from '../data/repo'
 import { DEFAULTS } from '../domain/catalog'
 import { buildAcceptedOrder, calcStateTotal, formatTotal } from '../domain/accept'
+import { snapshotDraft } from '../domain/draft'
 import { applyClientAndState, finishRepair } from '../domain/lifecycle'
 import { digitsTel } from '../domain/format'
 import type { Order, OrderItem, OrderSub } from '../domain/order'
@@ -52,22 +54,28 @@ type Mode = 'new' | 'edit' | 'repair'
 export function OrderForm({
   mode,
   order,
+  resumeDraft,
   onDone,
 }: {
   mode: Mode
   order?: Order
+  resumeDraft?: boolean
   onDone: () => void
 }) {
   const initial = useMemo(() => {
     if (order) return stateFromOrder(order, mode === 'repair')
+    if (resumeDraft) {
+      const draft = readDraft()
+      if (draft) return draft
+    }
     return { items: emptyItems(), subs: emptySubs() } satisfies OrderState
-  }, [order, mode])
+  }, [order, mode, resumeDraft])
 
-  const [marka, setMarka] = useState(order?.marka || 'ROWER')
-  const [model, setModel] = useState(order?.model || '')
-  const [kolor, setKolor] = useState(order?.kolor || '')
-  const [tel, setTel] = useState(order?.tel || '')
-  const [termin, setTermin] = useState(order?.termin || '')
+  const [marka, setMarka] = useState(order?.marka || initial.marka || 'ROWER')
+  const [model, setModel] = useState(order?.model || initial.model || '')
+  const [kolor, setKolor] = useState(order?.kolor || initial.kolor || '')
+  const [tel, setTel] = useState(order?.tel || initial.tel || '')
+  const [termin, setTermin] = useState(order?.termin || initial.termin || '')
   const [notatka, setNotatka] = useState(order?.raportKoncowy?.notatka || '')
   const [error, setError] = useState('')
   const [items, setItems] = useState<OrderItem[]>(initial.items)
@@ -75,6 +83,22 @@ export function OrderForm({
 
   const total = formatTotal(calcStateTotal({ items, subs }))
   const clientLocked = mode === 'repair'
+
+  useEffect(() => {
+    const persistInterrupt = () => {
+      writeDraft(snapshotDraft({ marka, model, kolor, tel, termin, items, subs }))
+      markInterrupted()
+    }
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') persistInterrupt()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('pagehide', persistInterrupt)
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('pagehide', persistInterrupt)
+    }
+  }, [marka, model, kolor, tel, termin, items, subs])
 
   function save() {
     const phone = tel.replace(/\D/g, '')
@@ -97,6 +121,7 @@ export function OrderForm({
     } else if (order && mode === 'repair') {
       saveToHistory(finishRepair(order, state, notatka))
     }
+    clearDraft()
     onDone()
   }
 

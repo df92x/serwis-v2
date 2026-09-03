@@ -46,7 +46,7 @@
 
 - [x] EDYTUJ bez reloadu, hydrate slim state
 - [x] Raport końcowy, WYDAJ, archiwum, kosz
-- [ ] Szkic tylko przy `visibilitychange` na formularzu
+- [x] Szkic tylko przy `visibilitychange` na formularzu
 
 ### Task 5: Sync i raporty
 
