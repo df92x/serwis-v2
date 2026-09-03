@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import {
   applyNaprawaOptions,
   applyPreset,
   findDefault,
   NAPRAWA_SERVICES,
 } from '../domain/catalog'
+import { evalExpr } from '../domain/evalExpr'
 import type { OrderItem, OrderSub, SelectedServiceOption } from '../domain/order'
 
 type Props = {
@@ -17,12 +19,32 @@ function patchItem(items: OrderItem[], name: string, patch: Partial<OrderItem>) 
   return items.map(it => it.name === name ? { ...it, ...patch } : it)
 }
 
+function PriceInput({ value, onCommit }: { value: number; onCommit: (n: number) => void }) {
+  const [raw, setRaw] = useState(value ? String(value) : '')
+  useEffect(() => {
+    setRaw(value ? String(value) : '')
+  }, [value])
+  return (
+    <input
+      className="price"
+      inputMode="decimal"
+      value={raw}
+      onChange={e => setRaw(e.target.value)}
+      onBlur={() => {
+        const n = evalExpr(raw)
+        const next = Number.isFinite(n) ? n : 0
+        setRaw(next ? String(next) : '')
+        onCommit(next)
+      }}
+    />
+  )
+}
+
 export function ServiceList({ items, subs, onItems, onSubs }: Props) {
   function toggle(name: string) {
     onItems(items.map(it => {
       if (it.name !== name) return it
-      const next = !it.checked
-      return { ...it, checked: next }
+      return { ...it, checked: !it.checked }
     }))
   }
 
@@ -99,12 +121,7 @@ export function ServiceList({ items, subs, onItems, onSubs }: Props) {
                     aria-label={`Ilość ${it.name}`}
                   />
                 )}
-                <input
-                  className="price"
-                  inputMode="decimal"
-                  value={it.price || ''}
-                  onChange={e => setPrice(it.name, Number(e.target.value.replace(',', '.')) || 0)}
-                />
+                <PriceInput value={it.price || 0} onCommit={n => setPrice(it.name, n)} />
               </label>
 
               {open && presets && presets.length > 0 && (
@@ -131,11 +148,7 @@ export function ServiceList({ items, subs, onItems, onSubs }: Props) {
                     const on = (it.selectedOptions || []).some(o => o.id === svc.id)
                     return (
                       <label key={svc.id} className="naprawa-opt">
-                        <input
-                          type="checkbox"
-                          checked={on}
-                          onChange={() => toggleNaprawa(svc)}
-                        />
+                        <input type="checkbox" checked={on} onChange={() => toggleNaprawa(svc)} />
                         <span>{svc.label}</span>
                         <strong>{svc.price} zł</strong>
                       </label>
@@ -171,11 +184,9 @@ export function ServiceList({ items, subs, onItems, onSubs }: Props) {
                 value={s.name}
                 onChange={e => setSub(i, { name: e.target.value, checked: !!e.target.value || s.checked })}
               />
-              <input
-                className="price"
-                inputMode="decimal"
-                value={s.price || ''}
-                onChange={e => setSub(i, { price: Number(e.target.value.replace(',', '.')) || 0 })}
+              <PriceInput
+                value={s.price || 0}
+                onCommit={n => setSub(i, { price: n, checked: n > 0 || !!s.name })}
               />
             </label>
           </li>

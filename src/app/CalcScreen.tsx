@@ -1,18 +1,41 @@
 import { useState } from 'react'
+import { evalExpr, kpAppend } from '../domain/evalExpr'
 import { eurToPln, fetchEuroRate, plnToEur, todayIsoDate } from '../integrations/euro'
 
-function evalExpr(raw: string) {
-  const s = raw.replace(/,/g, '.').replace(/×/g, '*').replace(/x/gi, '*').replace(/\s/g, '')
-  if (!s || /[^0-9.+\-*/]/.test(s)) return NaN
-  try {
-    return Function(`"use strict"; return (${s})`)() as number
-  } catch {
-    return NaN
-  }
-}
+const KEYS: { label: string; val: string; op?: boolean }[][] = [
+  [
+    { label: 'C', val: 'C', op: true },
+    { label: '⌫', val: '⌫', op: true },
+    { label: '÷', val: '/', op: true },
+    { label: '×', val: '*', op: true },
+  ],
+  [
+    { label: '7', val: '7' },
+    { label: '8', val: '8' },
+    { label: '9', val: '9' },
+    { label: '−', val: '-', op: true },
+  ],
+  [
+    { label: '4', val: '4' },
+    { label: '5', val: '5' },
+    { label: '6', val: '6' },
+    { label: '+', val: '+', op: true },
+  ],
+  [
+    { label: '1', val: '1' },
+    { label: '2', val: '2' },
+    { label: '3', val: '3' },
+    { label: '=', val: '=', op: true },
+  ],
+  [
+    { label: '0', val: '0' },
+    { label: ',', val: '.' },
+  ],
+]
 
 export function CalcScreen() {
   const [expr, setExpr] = useState('')
+  const [justCalc, setJustCalc] = useState(false)
   const [date, setDate] = useState(todayIsoDate())
   const [rate, setRate] = useState<number | null>(null)
   const [rateDate, setRateDate] = useState('')
@@ -20,7 +43,19 @@ export function CalcScreen() {
   const [eur, setEur] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
-  const n = evalExpr(expr)
+
+  const live = evalExpr(expr)
+  const display = !expr
+    ? '0'
+    : Number.isFinite(live)
+      ? live.toLocaleString('pl-PL', { maximumFractionDigits: 8 })
+      : (expr.slice(-1) || '0')
+
+  function tap(val: string) {
+    const next = kpAppend(expr, val, justCalc)
+    setExpr(next.expr)
+    setJustCalc(next.justCalc)
+  }
 
   async function loadRate() {
     setLoading(true)
@@ -39,8 +74,26 @@ export function CalcScreen() {
 
   return (
     <div className="new-order">
-      <input value={expr} onChange={e => setExpr(e.target.value)} placeholder="np. 12+8*2" />
-      <div className="total-line">{Number.isFinite(n) ? String(n) : '—'}</div>
+      <div className="kp-display-wrap">
+        <div className="kp-expr">{expr || ' '}</div>
+        <div className="kp-display">{display}</div>
+      </div>
+      <div className="kp-pad">
+        {KEYS.map((row, i) => (
+          <div key={i} className="kp-row">
+            {row.map(k => (
+              <button
+                key={k.val + k.label}
+                type="button"
+                className={k.op ? 'kp-btn op' : 'kp-btn'}
+                onClick={() => tap(k.val)}
+              >
+                {k.label}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
 
       <p className="list-h">Euro (EBC)</p>
       <label>

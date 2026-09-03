@@ -247,3 +247,34 @@ html, body, #root {
   color: var(--text);
 }
 .danger-cta { border-color: #7f1d1d; color: #f87171; }
+.order-card { position: relative; overflow: hidden; }
+.order-color-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+}
+.kp-display-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #12141c;
+  padding: 12px 14px;
+  text-align: right;
+}
+.kp-expr { min-height: 18px; color: var(--muted); font-size: 13px; word-break: break-all; }
+.kp-display { font-size: 28px; font-weight: 800; margin-top: 4px; }
+.kp-pad { display: flex; flex-direction: column; gap: 8px; }
+.kp-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.kp-row:last-child { grid-template-columns: 2fr 1fr 1fr; }
+.kp-btn {
+  min-height: 52px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #1a1d28;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.kp-btn.op { background: #1e3a5f; color: #7ba8f5; }

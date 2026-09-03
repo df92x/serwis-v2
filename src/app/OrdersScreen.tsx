@@ -12,6 +12,7 @@ import {
 import { createRabForEntry, hasRabForEntry, templateById } from '../data/rabatyStore'
 import { releaseOrder, unarchiveOrder } from '../domain/lifecycle'
 import { orderStatus, type Order } from '../domain/order'
+import { kolorBackgroundStyle } from '../domain/color'
 import { bikeDisplayName } from '../domain/parse'
 import { copyText, downloadReportPdf, downloadReportPng, downloadText, orderReportText } from '../domain/report'
 import { smsHref, smsPrzyjecieBody, smsWydanieBody } from '../domain/sms'
@@ -140,6 +141,9 @@ export function OrdersScreen({
           const readySms = smsHref(o.tel, smsWydanieBody(o))
           return (
             <li key={String(o.id)} className="order-card">
+              {!!o.kolor && (
+                <div className="order-color-bar" style={{ background: kolorBackgroundStyle(o.kolor) }} title={o.kolor} />
+              )}
               <div className="order-title">{bikeDisplayName(o.marka, o.model)}</div>
               <div className="order-meta">
                 {o.tel && <span>{o.tel}</span>}
