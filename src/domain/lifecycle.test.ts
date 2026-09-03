@@ -25,10 +25,11 @@ describe('lifecycle', () => {
       items: [{ name: 'Naprawa', price: 80, checked: true }],
       subs: [],
     }, '')
-    const out = releaseOrder(ready)
+    const out = releaseOrder({ ...ready, unarchivedAt: '2026-01-01T00:00:00.000Z' })
     expect(out.dataWydania).toBeTruthy()
     expect(out.archivedAt).toBeTruthy()
     expect(out.raportKoncowy).toBeTruthy()
+    expect(out.unarchivedAt).toBeUndefined()
   })
 
   it('upsertById replaces matching id', () => {

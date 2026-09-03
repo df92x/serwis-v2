@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { clearDraft, markInterrupted, readDraft, writeDraft } from '../data/draftStore'
 import { saveToHistory } from '../data/repo'
 import { DEFAULTS } from '../domain/catalog'
@@ -6,6 +6,7 @@ import { buildAcceptedOrder, calcStateTotal, formatTotal } from '../domain/accep
 import { snapshotDraft } from '../domain/draft'
 import { applyClientAndState, finishRepair } from '../domain/lifecycle'
 import { digitsTel } from '../domain/format'
+import { filesToPhotos, type Photo } from '../domain/photos'
 import type { Order, OrderItem, OrderSub } from '../domain/order'
 import { hydrateStateItems, parseState, type OrderState } from '../domain/parse'
 import { ServiceList } from '../ui/ServiceList'
@@ -34,6 +35,7 @@ function stateFromOrder(order: Order, repair: boolean): OrderState {
       kolor: order.kolor,
       tel: order.tel,
       termin: order.termin,
+      photos: order.photos,
     })
   }
   const parsed = parseState(order.state)
@@ -45,6 +47,7 @@ function stateFromOrder(order: Order, repair: boolean): OrderState {
     kolor: order.kolor || base.kolor,
     tel: order.tel || base.tel,
     termin: order.termin || base.termin,
+    photos: order.photos || base.photos,
     subs: base.subs.length ? base.subs : emptySubs(),
   })
 }
@@ -80,13 +83,20 @@ export function OrderForm({
   const [error, setError] = useState('')
   const [items, setItems] = useState<OrderItem[]>(initial.items)
   const [subs, setSubs] = useState<OrderSub[]>(initial.subs.length ? initial.subs : emptySubs())
+  const [photos, setPhotos] = useState<Photo[]>(
+    (order?.photos || initial.photos || []).filter(p => p.dataUrl),
+  )
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const total = formatTotal(calcStateTotal({ items, subs }))
   const clientLocked = mode === 'repair'
 
   useEffect(() => {
     const persistInterrupt = () => {
-      writeDraft(snapshotDraft({ marka, model, kolor, tel, termin, items, subs }))
+      writeDraft({
+        ...snapshotDraft({ marka, model, kolor, tel, termin, items, subs }),
+        photos,
+      })
       markInterrupted()
     }
     const onVis = () => {
@@ -98,7 +108,17 @@ export function OrderForm({
       document.removeEventListener('visibilitychange', onVis)
       window.removeEventListener('pagehide', persistInterrupt)
     }
-  }, [marka, model, kolor, tel, termin, items, subs])
+  }, [marka, model, kolor, tel, termin, items, subs, photos])
+
+  async function onFiles(files: FileList | null) {
+    if (!files?.length) return
+    try {
+      const added = await filesToPhotos(files)
+      setPhotos(prev => [...prev, ...added])
+    } catch {
+      setError('Nie udało się dodać zdjęcia.')
+    }
+  }
 
   function save() {
     const phone = tel.replace(/\D/g, '')
@@ -113,13 +133,13 @@ export function OrderForm({
       tel: digitsTel(tel),
       termin,
     }
-    const state: OrderState = { items, subs, ...client }
+    const state: OrderState = { items, subs, photos, ...client }
     if (mode === 'new') {
-      saveToHistory(buildAcceptedOrder({ ...client, state }))
+      saveToHistory(buildAcceptedOrder({ ...client, state, photos }))
     } else if (order && mode === 'edit') {
-      saveToHistory(applyClientAndState(order, client, state))
+      saveToHistory({ ...applyClientAndState(order, client, state), photos })
     } else if (order && mode === 'repair') {
-      saveToHistory(finishRepair(order, state, notatka))
+      saveToHistory({ ...finishRepair(order, state, notatka), photos })
     }
     clearDraft()
     onDone()
@@ -158,6 +178,31 @@ export function OrderForm({
       {clientLocked && (
         <p className="hint">{[marka, model].filter(Boolean).join(' ')} · {tel}</p>
       )}
+
+      <div className="photo-block">
+        <button type="button" className="chip" onClick={() => fileRef.current?.click()}>+ Zdjęcie</button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          multiple
+          hidden
+          onChange={e => {
+            void onFiles(e.target.files)
+            e.target.value = ''
+          }}
+        />
+        <div className="photo-previews">
+          {photos.map((p, i) => (
+            <div key={p.name + i} className="photo-thumb">
+              <img src={p.dataUrl} alt="" />
+              <button type="button" className="remove-photo" onClick={() => setPhotos(ps => ps.filter((_, j) => j !== i))}>×</button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <ServiceList items={items} subs={subs} onItems={setItems} onSubs={setSubs} />
       {mode === 'repair' && (
         <label>
@@ -167,6 +212,13 @@ export function OrderForm({
       )}
       <button type="submit" className="cta cta-add">
         {mode === 'repair' ? 'ZAKOŃCZ' : 'ZAPISZ'}
+      </button>
+      <button
+        type="button"
+        className="cta"
+        onClick={() => { clearDraft(); onDone() }}
+      >
+        Anuluj
       </button>
     </form>
   )

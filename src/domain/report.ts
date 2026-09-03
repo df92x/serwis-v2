@@ -69,8 +69,7 @@ export function downloadText(filename: string, text: string) {
   URL.revokeObjectURL(url)
 }
 
-/** Prosty PNG z tekstem — bez html2canvas. */
-export function downloadReportPng(filename: string, text: string) {
+function renderReportCanvas(text: string) {
   const rows = text.split('\n')
   const pad = 24
   const lineH = 22
@@ -80,7 +79,7 @@ export function downloadReportPng(filename: string, text: string) {
   canvas.width = w
   canvas.height = Math.max(h, 200)
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) return null
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.fillStyle = '#111827'
@@ -88,8 +87,34 @@ export function downloadReportPng(filename: string, text: string) {
   rows.forEach((row, i) => {
     ctx.fillText(row, pad, pad + (i + 1) * lineH - 6)
   })
+  return canvas
+}
+
+/** Prosty PNG z tekstem — bez html2canvas. */
+export function downloadReportPng(filename: string, text: string) {
+  const canvas = renderReportCanvas(text)
+  if (!canvas) return
   const a = document.createElement('a')
   a.href = canvas.toDataURL('image/png')
   a.download = filename
   a.click()
+}
+
+/** PDF jako obraz tekstu — polskie znaki bez osobnej czcionki. */
+export async function downloadReportPdf(filename: string, text: string) {
+  const canvas = renderReportCanvas(text)
+  if (!canvas) return
+  const { jsPDF } = await import('jspdf')
+  const img = canvas.toDataURL('image/jpeg', 0.92)
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+  const pageW = pdf.internal.pageSize.getWidth()
+  const pageH = pdf.internal.pageSize.getHeight()
+  const margin = 36
+  const maxW = pageW - margin * 2
+  const maxH = pageH - margin * 2
+  const scale = Math.min(maxW / canvas.width, maxH / canvas.height, 1)
+  const w = canvas.width * scale
+  const h = canvas.height * scale
+  pdf.addImage(img, 'JPEG', margin, margin, w, h)
+  pdf.save(filename)
 }

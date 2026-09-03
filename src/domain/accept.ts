@@ -27,9 +27,11 @@ export function buildAcceptedOrder(input: {
   termin: string
   ebike?: boolean
   state: OrderState
+  photos?: { dataUrl: string; name: string }[]
 }): Order {
   const label = nowLabel()
   const total = formatTotal(calcStateTotal(input.state))
+  const photos = input.photos || input.state.photos || []
   const state: OrderState = {
     ...input.state,
     marka: input.marka,
@@ -38,6 +40,7 @@ export function buildAcceptedOrder(input: {
     tel: input.tel,
     termin: input.termin,
     ebike: input.ebike ? '1' : '0',
+    photos,
   }
   return {
     id: Date.now(),
@@ -49,6 +52,7 @@ export function buildAcceptedOrder(input: {
     termin: input.termin,
     ebike: !!input.ebike,
     total,
+    photos,
     state: JSON.stringify(state),
   }
 }

@@ -44,13 +44,25 @@ export function finishRepair(order: Order, state: OrderState, notatka: string): 
 }
 
 export function releaseOrder(order: Order): Order {
-  return {
+  const next = {
     ...order,
     archivedAt: new Date().toISOString(),
     dataWydania: todayPl(),
     kodOdbioru: order.kodOdbioru || kodOdbioru(),
     kwotaSprzedazy: order.kwotaSprzedazy || order.total,
   }
+  delete next.unarchivedAt
+  return next
+}
+
+export function unarchiveOrder(order: Order): Order {
+  const next = {
+    ...order,
+    unarchivedAt: new Date().toISOString(),
+  }
+  delete next.archivedAt
+  delete next.dataWydania
+  return next
 }
 
 export function upsertById(list: Order[], order: Order) {

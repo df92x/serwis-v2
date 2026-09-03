@@ -11,6 +11,11 @@ export function moveHistoryToArchive(order: Order) {
   writeArchive(upsertById(readArchive(), order))
 }
 
+export function unarchiveToHistory(order: Order) {
+  writeArchive(removeById(readArchive(), order.id))
+  writeHistory(upsertById(readHistory(), order))
+}
+
 export function moveToTrash(order: Order, from: 'history' | 'archive') {
   if (from === 'history') writeHistory(removeById(readHistory(), order.id))
   else writeArchive(removeById(readArchive(), order.id))

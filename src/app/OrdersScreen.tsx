@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { readArchive, readHistory, readTrash } from '../data/storage'
-import { moveHistoryToArchive, moveToTrash, restoreFromTrash } from '../data/repo'
+import { moveHistoryToArchive, moveToTrash, restoreFromTrash, unarchiveToHistory } from '../data/repo'
 import { createRabForEntry, hasRabForEntry, templateById } from '../data/rabatyStore'
-import { releaseOrder } from '../domain/lifecycle'
+import { releaseOrder, unarchiveOrder } from '../domain/lifecycle'
 import { orderStatus, type Order } from '../domain/order'
 import { bikeDisplayName } from '../domain/parse'
-import { copyText, downloadReportPng, downloadText, orderReportText } from '../domain/report'
+import { copyText, downloadReportPdf, downloadReportPng, downloadText, orderReportText } from '../domain/report'
 import { smsHref, smsPrzyjecieBody, smsWydanieBody } from '../domain/sms'
 import { RABATY_TEMPLATES } from '../domain/rabaty'
 
@@ -73,6 +73,12 @@ export function OrdersScreen({
     setFlash('PNG pobrany.')
   }
 
+  function pdfReport(o: Order) {
+    void downloadReportPdf(fileBase(o) + '.pdf', orderReportText(o)).then(() => {
+      setFlash('PDF pobrany.')
+    })
+  }
+
   return (
     <div className="orders">
       <nav className="tabs">
@@ -112,6 +118,7 @@ export function OrdersScreen({
               </div>
               {o.kodOdbioru && <div className="order-date">Kod: {o.kodOdbioru}</div>}
               {o.label && <div className="order-date">{o.label}</div>}
+              {!!o.photos?.length && <div className="order-date">Zdjęcia: {o.photos.length}</div>}
               <div className="card-actions">
                 {tab === 'przyjete' && (
                   <>
@@ -128,15 +135,23 @@ export function OrdersScreen({
                     {readySms && <a className="link-btn" href={readySms}>SMS</a>}
                     <button type="button" onClick={() => shareReport(o)}>KOPIUJ</button>
                     <button type="button" onClick={() => pngReport(o)}>PNG</button>
+                    <button type="button" onClick={() => pdfReport(o)}>PDF</button>
                     <button type="button" className="ok" onClick={() => { moveHistoryToArchive(releaseOrder(o)); refresh() }}>WYDAJ</button>
                     <button type="button" className="danger" onClick={() => { moveToTrash(o, 'history'); refresh() }}>KOSZ</button>
                   </>
                 )}
                 {tab === 'wydane' && (
                   <>
+                    <button type="button" onClick={() => {
+                      unarchiveToHistory(unarchiveOrder(o))
+                      setTab('gotowe')
+                      refresh()
+                      setFlash('Cofnięto do Gotowe.')
+                    }}>COFNIJ</button>
                     <button type="button" onClick={() => assignDefaultRab(o)}>RABAT</button>
                     <button type="button" onClick={() => shareReport(o)}>KOPIUJ</button>
                     <button type="button" onClick={() => pngReport(o)}>PNG</button>
+                    <button type="button" onClick={() => pdfReport(o)}>PDF</button>
                     <button type="button" className="danger" onClick={() => { moveToTrash(o, 'archive'); refresh() }}>KOSZ</button>
                   </>
                 )}

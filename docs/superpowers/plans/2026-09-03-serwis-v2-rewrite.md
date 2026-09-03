@@ -58,7 +58,10 @@
 - [x] PWA + Update App
 - [x] Google Drive merge (logika `_pickMergeWinner`)
 - [x] Admin: login GIS + Synchronizuj (serwis-current.json)
-- [ ] PDF (opcjonalnie później)
+- [x] PDF (obraz tekstu raportu)
+- [x] Cofnij wydanie → Gotowe (`unarchivedAt`)
+- [x] Euro EBC w kalkulatorze
+- [x] Zdjęcia na formularzu (kompresja)
 
 ---
 
