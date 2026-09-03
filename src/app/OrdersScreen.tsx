@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
 import { readArchive, readHistory, readTrash } from '../data/storage'
 import { moveHistoryToArchive, moveToTrash, restoreFromTrash } from '../data/repo'
+import { createRabForEntry, hasRabForEntry, templateById } from '../data/rabatyStore'
 import { releaseOrder } from '../domain/lifecycle'
 import { orderStatus, type Order } from '../domain/order'
 import { bikeDisplayName } from '../domain/parse'
+import { smsHref, smsPrzyjecieBody, smsWydanieBody } from '../domain/sms'
+import { RABATY_TEMPLATES } from '../domain/rabaty'
 
 type Tab = 'przyjete' | 'gotowe' | 'wydane' | 'kosz'
 
@@ -25,6 +28,7 @@ export function OrdersScreen({
   const [tab, setTab] = useState<Tab>('przyjete')
   const [q, setQ] = useState('')
   const [tick, setTick] = useState(0)
+  const [flash, setFlash] = useState('')
   const refresh = () => setTick(n => n + 1)
 
   const orders = useMemo(() => {
@@ -39,6 +43,16 @@ export function OrdersScreen({
       return (n && tel.includes(n)) || name.includes(s) || kod.includes(s)
     })
   }, [tab, q, tick])
+
+  function assignDefaultRab(o: Order) {
+    if (hasRabForEntry(o)) {
+      setFlash('Kod rabatowy już istnieje dla tego zlecenia.')
+      return
+    }
+    const row = createRabForEntry(o, templateById(RABATY_TEMPLATES[0].id), '6')
+    setFlash(row ? `Kod ${row.code}` : 'Nie udało się utworzyć kodu.')
+    refresh()
+  }
 
   return (
     <div className="orders">
@@ -60,45 +74,55 @@ export function OrdersScreen({
         value={q}
         onChange={e => setQ(e.target.value)}
       />
+      {flash && <p className="hint">{flash}</p>}
       {!orders.length && (
         <p className="muted">
           Brak zleceń. Dane ze starej appki w tej samej przeglądarce pojawią się automatycznie.
         </p>
       )}
       <ul className="order-list">
-        {orders.map(o => (
-          <li key={String(o.id)} className="order-card">
-            <div className="order-title">{bikeDisplayName(o.marka, o.model)}</div>
-            <div className="order-meta">
-              {o.tel && <span>{o.tel}</span>}
-              {o.total && <span>{o.total} zł</span>}
-            </div>
-            {o.kodOdbioru && <div className="order-date">Kod: {o.kodOdbioru}</div>}
-            {o.label && <div className="order-date">{o.label}</div>}
-            <div className="card-actions">
-              {tab === 'przyjete' && (
-                <>
-                  <button type="button" onClick={() => onEdit(o)}>EDYTUJ</button>
-                  <button type="button" onClick={() => onRepair(o)}>NAPRAWA</button>
-                  <button type="button" className="danger" onClick={() => { moveToTrash(o, 'history'); refresh() }}>KOSZ</button>
-                </>
-              )}
-              {tab === 'gotowe' && (
-                <>
-                  <button type="button" onClick={() => onRepair(o)}>EDYTUJ</button>
-                  <button type="button" className="ok" onClick={() => { moveHistoryToArchive(releaseOrder(o)); refresh() }}>WYDAJ</button>
-                  <button type="button" className="danger" onClick={() => { moveToTrash(o, 'history'); refresh() }}>KOSZ</button>
-                </>
-              )}
-              {tab === 'wydane' && (
-                <button type="button" className="danger" onClick={() => { moveToTrash(o, 'archive'); refresh() }}>KOSZ</button>
-              )}
-              {tab === 'kosz' && (
-                <button type="button" onClick={() => { restoreFromTrash(o); refresh() }}>PRZYWRÓĆ</button>
-              )}
-            </div>
-          </li>
-        ))}
+        {orders.map(o => {
+          const acceptSms = smsHref(o.tel, smsPrzyjecieBody(o))
+          const readySms = smsHref(o.tel, smsWydanieBody(o))
+          return (
+            <li key={String(o.id)} className="order-card">
+              <div className="order-title">{bikeDisplayName(o.marka, o.model)}</div>
+              <div className="order-meta">
+                {o.tel && <span>{o.tel}</span>}
+                {o.total && <span>{o.total} zł</span>}
+              </div>
+              {o.kodOdbioru && <div className="order-date">Kod: {o.kodOdbioru}</div>}
+              {o.label && <div className="order-date">{o.label}</div>}
+              <div className="card-actions">
+                {tab === 'przyjete' && (
+                  <>
+                    <button type="button" onClick={() => onEdit(o)}>EDYTUJ</button>
+                    <button type="button" onClick={() => onRepair(o)}>NAPRAWA</button>
+                    {acceptSms && <a className="link-btn" href={acceptSms}>SMS</a>}
+                    <button type="button" className="danger" onClick={() => { moveToTrash(o, 'history'); refresh() }}>KOSZ</button>
+                  </>
+                )}
+                {tab === 'gotowe' && (
+                  <>
+                    <button type="button" onClick={() => onRepair(o)}>EDYTUJ</button>
+                    {readySms && <a className="link-btn" href={readySms}>SMS</a>}
+                    <button type="button" className="ok" onClick={() => { moveHistoryToArchive(releaseOrder(o)); refresh() }}>WYDAJ</button>
+                    <button type="button" className="danger" onClick={() => { moveToTrash(o, 'history'); refresh() }}>KOSZ</button>
+                  </>
+                )}
+                {tab === 'wydane' && (
+                  <>
+                    <button type="button" onClick={() => assignDefaultRab(o)}>RABAT</button>
+                    <button type="button" className="danger" onClick={() => { moveToTrash(o, 'archive'); refresh() }}>KOSZ</button>
+                  </>
+                )}
+                {tab === 'kosz' && (
+                  <button type="button" onClick={() => { restoreFromTrash(o); refresh() }}>PRZYWRÓĆ</button>
+                )}
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

@@ -1,16 +1,13 @@
 import { useState } from 'react'
+import { AdminScreen } from './AdminScreen'
 import { CalcScreen } from './CalcScreen'
+import { ChainScreen } from './ChainScreen'
 import { OrderForm } from './OrderForm'
 import { OrdersScreen } from './OrdersScreen'
+import { RabatyScreen } from './RabatyScreen'
 import { consumeInterrupted, readDraft } from '../data/draftStore'
 import type { Screen } from './screens'
 import type { Order } from '../domain/order'
-
-const PLACEHOLDERS: Partial<Record<Screen, string>> = {
-  admin: 'Administracja (sync / kopia) — kolejna faza',
-  kody: 'Kody rabatowe — kolejna faza',
-  lancuch: 'Kalkulator łańcucha — kolejna faza',
-}
 
 type View =
   | { screen: Screen }
@@ -72,9 +69,9 @@ export function AppShell() {
           <OrderForm mode="repair" order={view.order} onDone={() => setView({ screen: 'przegladaj' })} />
         )}
         {view.screen === 'kalkulator' && <CalcScreen />}
-        {PLACEHOLDERS[view.screen as Screen] && (
-          <p className="muted">{PLACEHOLDERS[view.screen as Screen]}</p>
-        )}
+        {view.screen === 'lancuch' && <ChainScreen />}
+        {view.screen === 'kody' && <RabatyScreen />}
+        {view.screen === 'admin' && <AdminScreen />}
       </div>
     )
   }

@@ -50,8 +50,12 @@
 
 ### Task 5: Sync i raporty
 
+- [x] Rabaty (active/used, promo, przypisz do wydanego)
+- [x] Kalkulator + łańcuch
+- [x] Admin eksport/import JSON (te same klucze)
+- [x] SMS przyjęcie / gotowe / rabat
 - [ ] Google Drive merge (logika `_pickMergeWinner`)
-- [ ] PNG/PDF, rabaty, kalkulatory, PWA, Update App
+- [ ] PNG/PDF, PWA, Update App
 
 ---
 
