@@ -161,3 +161,26 @@ html, body, #root {
   cursor: pointer;
 }
 .chip.on { color: var(--text); border-color: #f59e0b; }
+.update-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #1e40af;
+  border-radius: 12px;
+  background: #12141c;
+  font-size: 13px;
+  font-weight: 700;
+}
+.update-banner button {
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #1a1d28;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 10px;
+}
+.update-banner .ok { border-color: #1e40af; color: var(--browse); }

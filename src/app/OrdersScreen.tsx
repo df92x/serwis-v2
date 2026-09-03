@@ -5,6 +5,7 @@ import { createRabForEntry, hasRabForEntry, templateById } from '../data/rabatyS
 import { releaseOrder } from '../domain/lifecycle'
 import { orderStatus, type Order } from '../domain/order'
 import { bikeDisplayName } from '../domain/parse'
+import { copyText, downloadReportPng, downloadText, orderReportText } from '../domain/report'
 import { smsHref, smsPrzyjecieBody, smsWydanieBody } from '../domain/sms'
 import { RABATY_TEMPLATES } from '../domain/rabaty'
 
@@ -16,6 +17,10 @@ function loadTab(tab: Tab): Order[] {
   const hist = readHistory()
   if (tab === 'gotowe') return hist.filter(o => orderStatus(o) === 'gotowe')
   return hist.filter(o => orderStatus(o) === 'przyjete')
+}
+
+function fileBase(o: Order) {
+  return `serwis-${String(o.id)}`
 }
 
 export function OrdersScreen({
@@ -52,6 +57,20 @@ export function OrdersScreen({
     const row = createRabForEntry(o, templateById(RABATY_TEMPLATES[0].id), '6')
     setFlash(row ? `Kod ${row.code}` : 'Nie udało się utworzyć kodu.')
     refresh()
+  }
+
+  async function shareReport(o: Order) {
+    const text = orderReportText(o)
+    if (await copyText(text)) setFlash('Raport skopiowany.')
+    else {
+      downloadText(fileBase(o) + '.txt', text)
+      setFlash('Raport pobrany (TXT).')
+    }
+  }
+
+  function pngReport(o: Order) {
+    downloadReportPng(fileBase(o) + '.png', orderReportText(o))
+    setFlash('PNG pobrany.')
   }
 
   return (
@@ -99,6 +118,7 @@ export function OrdersScreen({
                     <button type="button" onClick={() => onEdit(o)}>EDYTUJ</button>
                     <button type="button" onClick={() => onRepair(o)}>NAPRAWA</button>
                     {acceptSms && <a className="link-btn" href={acceptSms}>SMS</a>}
+                    <button type="button" onClick={() => shareReport(o)}>KOPIUJ</button>
                     <button type="button" className="danger" onClick={() => { moveToTrash(o, 'history'); refresh() }}>KOSZ</button>
                   </>
                 )}
@@ -106,6 +126,8 @@ export function OrdersScreen({
                   <>
                     <button type="button" onClick={() => onRepair(o)}>EDYTUJ</button>
                     {readySms && <a className="link-btn" href={readySms}>SMS</a>}
+                    <button type="button" onClick={() => shareReport(o)}>KOPIUJ</button>
+                    <button type="button" onClick={() => pngReport(o)}>PNG</button>
                     <button type="button" className="ok" onClick={() => { moveHistoryToArchive(releaseOrder(o)); refresh() }}>WYDAJ</button>
                     <button type="button" className="danger" onClick={() => { moveToTrash(o, 'history'); refresh() }}>KOSZ</button>
                   </>
@@ -113,6 +135,8 @@ export function OrdersScreen({
                 {tab === 'wydane' && (
                   <>
                     <button type="button" onClick={() => assignDefaultRab(o)}>RABAT</button>
+                    <button type="button" onClick={() => shareReport(o)}>KOPIUJ</button>
+                    <button type="button" onClick={() => pngReport(o)}>PNG</button>
                     <button type="button" className="danger" onClick={() => { moveToTrash(o, 'archive'); refresh() }}>KOSZ</button>
                   </>
                 )}

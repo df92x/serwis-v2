@@ -54,8 +54,10 @@
 - [x] Kalkulator + łańcuch
 - [x] Admin eksport/import JSON (te same klucze)
 - [x] SMS przyjęcie / gotowe / rabat
+- [x] Raport KOPIUJ / PNG (tekstowy canvas)
+- [x] PWA + Update App
 - [ ] Google Drive merge (logika `_pickMergeWinner`)
-- [ ] PNG/PDF, PWA, Update App
+- [ ] PDF (opcjonalnie później)
 
 ---
 

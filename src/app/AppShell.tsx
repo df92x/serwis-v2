@@ -5,6 +5,7 @@ import { ChainScreen } from './ChainScreen'
 import { OrderForm } from './OrderForm'
 import { OrdersScreen } from './OrdersScreen'
 import { RabatyScreen } from './RabatyScreen'
+import { UpdateAppBanner } from './UpdateAppBanner'
 import { consumeInterrupted, readDraft } from '../data/draftStore'
 import type { Screen } from './screens'
 import type { Order } from '../domain/order'
@@ -78,6 +79,7 @@ export function AppShell() {
 
   return (
     <div className="shell">
+      <UpdateAppBanner />
       <header className="brand">
         <h1>SERWIS</h1>
         <p className="muted">v2 — przebudowa (projekt równoległy)</p>
