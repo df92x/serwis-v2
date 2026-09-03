@@ -45,6 +45,8 @@ export type Order = {
   dataWydania?: string
   archivedAt?: string
   smsSent?: boolean
+  totalPrzedRaportem?: string
+  kwotaSprzedazy?: string
 }
 
 export function orderStatus(order: Order): OrderStatus {

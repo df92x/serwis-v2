@@ -31,20 +31,21 @@
 
 ### Task 2: Model danych + migracja
 
-- [ ] Typy `Order`, `RaportKoncowy`, `OrderState`
-- [ ] `data/storage.ts` odczyt/zapis historii z tych samych kluczy
-- [ ] Test: parsowanie przykładowego wpisu `wycena-history`
+- [x] Typy `Order`, `RaportKoncowy`, `OrderState`
+- [x] `data/storage.ts` odczyt/zapis historii z tych samych kluczy
+- [x] Test: parsowanie przykładowego wpisu `wycena-history`
+- [x] PRZEGLĄDAJ czyta Przyjęte / Gotowe / Wydane / Kosz
 
 ### Task 3: Przyjęcie zlecenia
 
-- [ ] Modal klienta + lista usług (cennik DEFAULTS)
-- [ ] Zapis do `wycena-history`
-- [ ] Lista Przyjęte
+- [x] Modal klienta + lista usług (cennik DEFAULTS) — uproszczony formularz
+- [x] Zapis do `wycena-history`
+- [x] Lista Przyjęte
 
 ### Task 4: EDYTUJ / NAPRAWA / wydanie
 
-- [ ] EDYTUJ bez reloadu, hydrate slim state
-- [ ] Raport końcowy, WYDAJ, archiwum, kosz
+- [x] EDYTUJ bez reloadu, hydrate slim state
+- [x] Raport końcowy, WYDAJ, archiwum, kosz
 - [ ] Szkic tylko przy `visibilitychange` na formularzu
 
 ### Task 5: Sync i raporty

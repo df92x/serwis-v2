@@ -1,29 +1,71 @@
 import { useState } from 'react'
+import { CalcScreen } from './CalcScreen'
+import { OrderForm } from './OrderForm'
+import { OrdersScreen } from './OrdersScreen'
 import type { Screen } from './screens'
+import type { Order } from '../domain/order'
 
 const PLACEHOLDERS: Partial<Record<Screen, string>> = {
-  przegladaj: 'Lista zleceń — kolejna faza',
-  nowe: 'Przyjęcie zlecenia — kolejna faza',
-  admin: 'Administracja — kolejna faza',
+  admin: 'Administracja (sync / kopia) — kolejna faza',
   kody: 'Kody rabatowe — kolejna faza',
-  kalkulator: 'Kalkulator — kolejna faza',
-  lancuch: 'Łańcuch — kolejna faza',
+  lancuch: 'Kalkulator łańcucha — kolejna faza',
+}
+
+type View =
+  | { screen: Screen }
+  | { screen: 'nowe' }
+  | { screen: 'przegladaj' }
+  | { screen: 'edit'; order: Order }
+  | { screen: 'repair'; order: Order }
+
+function title(view: View) {
+  if (view.screen === 'edit') return 'Edycja'
+  if (view.screen === 'repair') return 'Naprawa'
+  if (view.screen === 'przegladaj') return 'Zlecenia'
+  if (view.screen === 'nowe') return 'Nowe zlecenie'
+  if (view.screen === 'admin') return 'Administracja'
+  if (view.screen === 'kody') return 'Kody rabatowe'
+  if (view.screen === 'kalkulator') return 'Kalkulator'
+  if (view.screen === 'lancuch') return 'Łańcuch'
+  return 'SERWIS'
 }
 
 export function AppShell() {
-  const [screen, setScreen] = useState<Screen>('menu')
+  const [view, setView] = useState<View>({ screen: 'menu' })
+  const backToBrowse = view.screen === 'edit' || view.screen === 'repair'
 
-  if (screen !== 'menu') {
+  if (view.screen !== 'menu') {
     return (
       <div className="shell">
         <header className="shell-head">
-          <button type="button" className="ghost" onClick={() => setScreen('menu')}>
-            ← Menu
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => setView({ screen: backToBrowse ? 'przegladaj' : 'menu' })}
+          >
+            ← Wstecz
           </button>
-          <h1>{screen}</h1>
+          <h1>{title(view)}</h1>
         </header>
-        <p className="muted">{PLACEHOLDERS[screen]}</p>
-        <p className="hint">Stara aplikacja w folderze SERWIS działa niezależnie.</p>
+        {view.screen === 'przegladaj' && (
+          <OrdersScreen
+            onEdit={order => setView({ screen: 'edit', order })}
+            onRepair={order => setView({ screen: 'repair', order })}
+          />
+        )}
+        {view.screen === 'nowe' && (
+          <OrderForm mode="new" onDone={() => setView({ screen: 'przegladaj' })} />
+        )}
+        {view.screen === 'edit' && (
+          <OrderForm mode="edit" order={view.order} onDone={() => setView({ screen: 'przegladaj' })} />
+        )}
+        {view.screen === 'repair' && (
+          <OrderForm mode="repair" order={view.order} onDone={() => setView({ screen: 'przegladaj' })} />
+        )}
+        {view.screen === 'kalkulator' && <CalcScreen />}
+        {PLACEHOLDERS[view.screen as Screen] && (
+          <p className="muted">{PLACEHOLDERS[view.screen as Screen]}</p>
+        )}
       </div>
     )
   }
@@ -34,25 +76,17 @@ export function AppShell() {
         <h1>SERWIS</h1>
         <p className="muted">v2 — przebudowa (projekt równoległy)</p>
       </header>
-      <button type="button" className="cta cta-add" onClick={() => setScreen('nowe')}>
+      <button type="button" className="cta cta-add" onClick={() => setView({ screen: 'nowe' })}>
         DODAJ
       </button>
-      <button type="button" className="cta cta-browse" onClick={() => setScreen('przegladaj')}>
+      <button type="button" className="cta cta-browse" onClick={() => setView({ screen: 'przegladaj' })}>
         PRZEGLĄDAJ
       </button>
       <div className="row">
-        <button type="button" className="tile" onClick={() => setScreen('kody')}>
-          Rabaty
-        </button>
-        <button type="button" className="tile" onClick={() => setScreen('kalkulator')}>
-          Kalkulator
-        </button>
-        <button type="button" className="tile" onClick={() => setScreen('lancuch')}>
-          Łańcuch
-        </button>
-        <button type="button" className="tile" onClick={() => setScreen('admin')}>
-          Admin
-        </button>
+        <button type="button" className="tile" onClick={() => setView({ screen: 'kody' })}>Rabaty</button>
+        <button type="button" className="tile" onClick={() => setView({ screen: 'kalkulator' })}>Kalkulator</button>
+        <button type="button" className="tile" onClick={() => setView({ screen: 'lancuch' })}>Łańcuch</button>
+        <button type="button" className="tile" onClick={() => setView({ screen: 'admin' })}>Admin</button>
       </div>
     </div>
   )

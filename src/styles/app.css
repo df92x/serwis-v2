@@ -62,3 +62,76 @@ html, body, #root {
 }
 
 .ghost { min-height: 36px; padding: 0 10px; }
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.tab {
+  border: 1px solid var(--border);
+  background: #12141c;
+  color: var(--muted);
+  border-radius: 8px;
+  min-height: 36px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab.on { color: var(--text); border-color: #3b82f6; }
+
+.search {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #12141c;
+  color: var(--text);
+}
+
+.order-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.order-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: #12141c;
+}
+
+.order-title { font-weight: 800; }
+.order-meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; margin-top: 4px; }
+.order-date { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.new-order { display: flex; flex-direction: column; gap: 10px; }
+.new-order label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.new-order input, .new-order select {
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #12141c;
+  color: var(--text);
+  padding: 0 10px;
+}
+.form-error { color: #ef4444; }
+.list-h { font-size: 13px; margin: 8px 0 0; }
+.svc-list { list-style: none; margin: 0; padding: 0; }
+.svc-row { display: grid; grid-template-columns: auto 1fr 72px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); color: var(--text); font-size: 14px; font-weight: 600; }
+.svc-row .price { min-height: 32px; text-align: right; }
+.svc-row.sub { grid-template-columns: 1fr 72px; }
+.total-line { font-weight: 800; font-size: 18px; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.card-actions button {
+  flex: 1;
+  min-height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #1a1d28;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.card-actions .ok { border-color: #166534; color: var(--add); }
+.card-actions .danger { border-color: #7f1d1d; color: #f87171; }
